@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Storage Environment GUI</title>
+
+    <!-- jQuery and jQuery UI -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+    <!-- Custom Styles -->
+    <style>
+        /* General Styling */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f4f8;
+        }
+
+        #container {
+            width: 100%;
+            height: calc(100vh - 80px); /* Account for the font bar */
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Draggable and Resizable Elements */
+        .draggable {
+            position: absolute;
+            cursor: move;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .draggable:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .resizable {
+            resize: both;
+            overflow: hidden;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px;
+            color: #fff;
+            text-align: center;
+            font-weight: bold;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-blue { background: linear-gradient(45deg, #007bff, #0056b3); }
+        .btn-green { background: linear-gradient(45deg, #28a745, #196f3d); }
+        .btn-pink { background: linear-gradient(45deg, #e83e8c, #b32c6d); }
+        .btn-orange { background: linear-gradient(45deg, #fd7e14, #d66b10); }
+
+        /* Controls Panel */
+        #font-bar {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            background: #ffffff;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        #font-bar input, #font-bar button {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 5px 10px;
+        }
+
+        #font-bar button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #font-bar button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Description */
+        #description {
+            padding: 15px;
+            background: #ffffff;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.2s;
+        }
+
+        #description:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Images */
+        #user-avatar, #product-image {
+            width: 150px;
+            height: 150px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Ensure number field is absolutely positioned and background is larger */
+        #number-field-wrapper {
+            position: absolute; /* Allow dragging */
+            top: 250px;
+            left: 50px;
+            width: 150px; /* Increased width */
+            height: 80px; /* Increased height */
+            background-color: lightblue;
+            border-radius: 5px;
+            padding: 10px; /* Added padding */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #number-field {
+            width: 100%;
+            height: 100%;
+            border: none;
+            text-align: center;
+            font-size: 20px; /* Larger text size for better visibility */
+        }
+
+        #user-avatar img, #product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* New style for the dummy data output */
+        #dummy-data {
+            display: none;
+            position: absolute;
+            top: 250px;
+            left: 250px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <!-- Buttons -->
+        <div id="picking-btn" class="draggable resizable btn btn-blue" style="top: 50px; left: 50px;">Picking</div>
+        <div id="put-away-btn" class="draggable resizable btn btn-green" style="top: 50px; left: 200px;">Put Away</div>
+        <div id="inventory-btn" class="draggable resizable btn btn-pink" style="top: 150px; left: 50px;">Inventory</div>
+        <div id="confirm-btn" class="draggable resizable btn btn-orange" style="top: 150px; left: 200px;">Confirm</div>
+
+        <!-- Number Field Wrapper (resizable and draggable) -->
+        <div id="number-field-wrapper" class="draggable resizable">
+            <input id="number-field" class="drag-number" type="number" value="0">
+        </div>
+
+        <!-- Static Images -->
+        <div id="user-avatar" class="draggable resizable" style="top: 50px; right: 50px;">
+            <img src="https://img.freepik.com/free-vector/smiling-young-man-illustration_1308-174669.jpg" alt="User Avatar">
+        </div>
+        <div id="product-image" class="draggable resizable" style="top: 320px; right: 50px;">
+            <img src="https://res.cloudinary.com/rsc/image/upload/b_rgb:FFFFFF,c_pad,dpr_2.625,f_auto,h_214,q_auto,w_380/c_pad,h_214,w_380/Y2849260-01?pgw=1" alt="Product Image">
+        </div>
+
+        <!-- Description -->
+        <div id="description" class="draggable resizable" style="top: 350px; left: 50px;">
+            <p>Product: High-quality Lidar Sensor</p>
+        </div>
+
+        <!-- Dummy Data Display -->
+        <div id="dummy-data">
+            <h3>Dummy Data for Storage Environment</h3>
+            <p>Storage ID: 12345</p>
+            <p>Environment: Warehouse 1</p>
+            <p>Status: Active</p>
+            <p>Last Updated: 2024-12-09</p>
+        </div>
+    </div>
+
+    <!-- Font Bar -->
+    <div id="font-bar">
+        <label for="font-size">Font Size:</label>
+        <input id="font-size" type="number" min="10" max="50" value="16">
+
+        <label for="font-color">Font Color:</label>
+        <input id="font-color" type="color" value="#000000">
+
+        <label for="number-field-color">Number Field Color:</label>
+        <input id="number-field-color" type="color" value="#ADD8E6"> <!-- Default Light Blue -->
+
+        <button id="apply-style">Apply</button>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            // Make elements draggable, including the input field wrapper
+            $(".draggable").draggable({
+                containment: "#container", // Limit movement to the container
+                cancel: "input, textarea"  // Ensure inputs can still be interacted with
+            });
+
+            // Make elements resizable
+            $(".resizable").resizable();
+
+            // Apply font size and color to description
+            $("#apply-style").on("click", function () {
+                const fontSize = $("#font-size").val() + "px";
+                const fontColor = $("#font-color").val();
+
+                // Update description style
+                $("#description").css({
+                    "font-size": fontSize,
+                    "color": fontColor
+                });
+            });
+
+            // Change the background color of the number field
+            $("#number-field-color").on("input", function() {
+                const color = $(this).val();
+                $("#number-field-wrapper").css("background-color", color);
+            });
+
+            // Button Color Change Functionality
+            $(".btn").on("dblclick", function () {
+                const newBackground = prompt("Enter a new background (e.g., red, #ff0000, or linear-gradient(to right, red, yellow)): ");
+                if (newBackground) {
+                    $(this).css("background", newBackground);
+                }
+            });
+
+            // Show dummy data on single click of "Confirm" button
+            $("#confirm-btn").on("click", function () {
+                $("#dummy-data").fadeIn();
+            });
+        });
+    </script>
+</body>
+</html>
